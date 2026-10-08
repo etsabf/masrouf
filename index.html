@@ -313,7 +313,7 @@ const T = {
 };
 
 /* ---------- État ---------- */
-let prefs = { lang:'fr', million:true, auto:false };
+let prefs = { lang:'fr', million:true, auto:true };
 let items = [];
 let viewMonth = monthKey(new Date());
 let editingId = null, lastAddedId = null, editCat = 'autre';
@@ -584,6 +584,10 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) naviga
 /* ---------- Démarrage ---------- */
 load(); applyLang(); syncSwitches(); render();
 if (new URLSearchParams(location.search).has('dicter') || prefs.auto) setTimeout(startListening, 400);
+// L'app revient au premier plan (on retouche l'icône) : on réécoute directement
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && prefs.auto && SR && !listening && $('#editSheet').hidden && $('#setSheet').hidden) setTimeout(startListening, 300);
+});
 })();
 </script>
 </body>
