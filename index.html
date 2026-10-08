@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Masrouf</title>
+<meta name="description" content="Carnet de dépenses à la voix — français et arabe.">
+<meta name="theme-color" content="#EDEFEA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1411" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Masrouf">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Readex+Pro:wght@300;400;500;600;700&display=swap">
+<style>
+/* Concept : un carnet de poche — une seule colonne, le gros bouton micro au pouce, les montants en chiffres de registre. */
+:root{
+  --bg:#EDEFEA; --surface:#FFFFFF; --sunken:#E3E7E1; --ink:#13201A; --muted:#5B6961; --line:#D3D9D2;
+  --accent:#E39B12; --accent-ink:#1E1503; --accent-soft:#F7E3BA; --brand:#1F5C45; --danger:#B3261E; --ok:#1F7A4D;
+  --shadow:0 1px 0 rgba(19,32,26,.04), 0 8px 24px -12px rgba(19,32,26,.18);
+  --c-carburant:#D9822B; --c-repas:#C2553D; --c-courses:#5E8C31; --c-transport:#2F6FA3; --c-atelier:#6B5B95;
+  --c-factures:#0F8B8D; --c-sante:#C04A7A; --c-personnel:#8A6D1F; --c-autre:#8A958E;
+  --f-ui:"Readex Pro", system-ui, "Segoe UI", Tahoma, Arial, sans-serif;
+  --f-num:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r:18px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#0E1411; --surface:#16201B; --sunken:#1C2721; --ink:#E7EDE9; --muted:#93A39A; --line:#27332C;
+  --accent:#F0AA22; --accent-ink:#1E1503; --accent-soft:#3A2E12; --brand:#6CC39D; --danger:#F2867E; --ok:#6CC39D;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#0E1411; --surface:#16201B; --sunken:#1C2721; --ink:#E7EDE9; --muted:#93A39A; --line:#27332C;
+  --accent:#F0AA22; --accent-ink:#1E1503; --accent-soft:#3A2E12; --brand:#6CC39D; --danger:#F2867E; --ok:#6CC39D;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark; }
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--f-ui);overscroll-behavior-y:contain}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:8px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+[hidden]{display:none!important}
+
+.app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 16px calc(env(safe-area-inset-bottom,0px) + 150px)}
+
+/* En-tête */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:6px 14px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:var(--brand);display:grid;place-items:center;flex:none}
+.brand-mark svg{width:18px;height:18px}
+.brand h1{margin:0;font-size:19px;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+.brand small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.top-actions{display:flex;gap:8px;align-items:center}
+.seg{display:flex;background:var(--sunken);border-radius:999px;padding:3px}
+.seg button{min-width:42px;height:32px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.icon-btn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
+.icon-btn:active{background:var(--sunken)}
+.icon-btn svg{width:22px;height:22px}
+
+/* Résumé */
+.summary{background:var(--surface);border-radius:var(--r);padding:18px 18px 16px;box-shadow:var(--shadow)}
+.sum-row{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+[dir="rtl"] .label{text-transform:none;letter-spacing:0;font-size:13px}
+.today{font-size:clamp(30px,9vw,40px);font-weight:600;line-height:1.05;margin-top:4px}
+.today .cur,.amount .cur{font-size:.5em;color:var(--muted);font-weight:500;margin-inline-start:4px}
+.month-tot{text-align:end}
+.month-tot .num{font-size:18px;font-weight:600}
+.bar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--sunken);margin-top:14px;gap:2px}
+.bar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-inline-end:5px;vertical-align:1px}
+
+/* Liste */
+.list-head{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 6px}
+.month-nav{display:flex;align-items:center;gap:4px}
+.month-nav .icon-btn{width:34px;height:34px}
+.month-name{font-weight:600;font-size:15px;min-width:118px;text-align:center}
+[dir="rtl"] .flip{transform:scaleX(-1)}
+.day{margin-top:14px}
+.day-h{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);padding:0 4px 6px;border-bottom:1px solid var(--line)}
+.day-h .num{color:var(--ink);font-weight:600}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;width:100%;padding:12px 4px;border-bottom:1px solid var(--line);text-align:start}
+.row:active{background:var(--sunken)}
+.dot{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+.row-main{min-width:0}
+.row-title{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-sub{font-size:12px;color:var(--muted)}
+.amount{font-weight:600;font-size:16px;white-space:nowrap}
+.row.fresh{animation:fresh 1.6s ease-out}
+@keyframes fresh{0%{background:var(--accent-soft)}100%{background:transparent}}
+.empty{margin-top:28px;text-align:center;color:var(--muted);padding:26px 16px;border:1.5px dashed var(--line);border-radius:var(--r)}
+.empty strong{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}
+.empty q{display:block;margin-top:10px;font-style:normal;color:var(--ink);font-family:var(--f-num);font-size:13px}
+
+/* Dock micro */
+.dock{position:fixed;inset-inline:0;bottom:0;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 18px);
+  background:linear-gradient(to top,var(--bg) 62%,transparent);pointer-events:none;z-index:5}
+.dock-inner{max-width:560px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:auto}
+.bubble{max-width:100%;background:var(--surface);border-radius:16px;padding:10px 14px;box-shadow:var(--shadow);font-size:15px;text-align:center;min-height:42px}
+.bubble .hint{color:var(--muted);font-size:13px}
+.controls{display:grid;grid-template-columns:52px auto 52px;align-items:center;gap:26px}
+.side-btn{width:52px;height:52px;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--ink)}
+.side-btn svg{width:22px;height:22px}
+.mic{position:relative;width:84px;height:84px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;
+  box-shadow:0 10px 26px -8px color-mix(in srgb,var(--accent) 70%,transparent),inset 0 -3px 0 rgba(0,0,0,.12);transition:transform .15s}
+.mic:active{transform:scale(.95)}
+.mic svg{width:34px;height:34px;position:relative;z-index:1}
+.mic::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--accent);opacity:0}
+.mic.listening{background:var(--danger);color:#fff}
+.mic.listening::before{background:var(--danger);animation:ring 1.3s ease-out infinite}
+@keyframes ring{0%{transform:scale(1);opacity:.45}100%{transform:scale(1.7);opacity:0}}
+.mic-cap{font-size:12px;color:var(--muted);margin-top:-4px}
+
+/* Feuille (édition / réglages) */
+.scrim{position:fixed;inset:0;background:rgba(8,12,10,.45);z-index:20;opacity:0;transition:opacity .2s}
+.scrim.show{opacity:1}
+.sheet{position:fixed;inset-inline:0;bottom:0;z-index:21;background:var(--surface);border-radius:22px 22px 0 0;
+  padding:10px 18px calc(env(safe-area-inset-bottom,0px) + 18px);max-width:560px;margin:0 auto;transform:translateY(102%);transition:transform .25s cubic-bezier(.2,.8,.2,1);max-height:92%;overflow:auto}
+.sheet.show{transform:none}
+.grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet h2{margin:0 0 14px;font-size:18px;font-weight:600}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:13px;color:var(--muted)}
+.inp{width:100%;height:50px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px}
+.inp:focus{outline:none;border-color:var(--accent)}
+.inp.big{font-family:var(--f-num);font-size:24px;font-weight:600;height:58px}
+.amount-wrap{position:relative}
+.amount-wrap .unit{position:absolute;inset-inline-end:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:500}
+.cats{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:36px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line);font-size:13px;display:inline-flex;align-items:center;gap:6px}
+.chip i{width:8px;height:8px;border-radius:2px}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--surface)}
+.raw{font-size:12px;color:var(--muted);background:var(--sunken);border-radius:10px;padding:8px 10px;margin-bottom:14px}
+.btns{display:flex;gap:10px;margin-top:6px}
+.btn{flex:1;height:52px;border-radius:14px;font-weight:600;font-size:16px}
+.btn.primary{background:var(--ink);color:var(--surface)}
+.btn.ghost{background:var(--sunken)}
+.btn.danger{background:transparent;color:var(--danger);border:1.5px solid color-mix(in srgb,var(--danger) 40%,transparent)}
+.btn.danger.armed{background:var(--danger);color:#fff}
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.set-row p{margin:0}
+.set-row small{display:block;color:var(--muted);font-size:12.5px}
+.switch{width:52px;height:32px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch[aria-checked="true"]{background:var(--ok)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+[dir="rtl"] .switch[aria-checked="true"]::after{transform:translateX(-20px)}
+
+/* Toast */
+.toast{position:fixed;inset-inline:16px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:30;max-width:528px;margin:0 auto;
+  background:var(--ink);color:var(--surface);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;
+  transform:translateY(-140%);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.toast.show{transform:none}
+.toast .t-msg{flex:1;min-width:0;font-size:14px}
+.toast .t-msg b{font-family:var(--f-num)}
+.toast button{color:var(--accent);font-weight:600;font-size:14px;padding:6px 4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#F0AA22" stroke-width="2.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3" fill="#F0AA22"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg></div>
+      <div><h1 data-i="appName">Masrouf</h1><small data-i="tagline">Carnet de dépenses</small></div>
+    </div>
+    <div class="top-actions">
+      <div class="seg" role="group" aria-label="Langue">
+        <button id="langFr" aria-pressed="true">FR</button>
+        <button id="langAr" aria-pressed="false">ع</button>
+      </div>
+      <button class="icon-btn" id="openSettings" aria-label="Réglages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div>
+  </header>
+
+  <section class="summary" aria-live="polite">
+    <div class="sum-row">
+      <div>
+        <div class="label" data-i="today">Aujourd'hui</div>
+        <div class="today num" id="todayTotal">0<span class="cur">DA</span></div>
+      </div>
+      <div class="month-tot">
+        <div class="label" id="monthLabel">Ce mois</div>
+        <div class="num" id="monthTotal">0 DA</div>
+      </div>
+    </div>
+    <div class="bar" id="catBar"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <div class="list-head">
+    <div class="label" data-i="history">Historique</div>
+    <div class="month-nav">
+      <button class="icon-btn" id="prevM" aria-label="Mois précédent"><svg class="flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="month-name" id="monthName"></div>
+      <button class="icon-btn" id="nextM" aria-label="Mois suivant"><svg class="flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+  <main id="list"></main>
+</div>
+
+<div class="dock">
+  <div class="dock-inner">
+    <div class="bubble" id="bubble"><span class="hint" data-i="hint">Touchez le micro et dites : « 10 000 dinars carburant »</span></div>
+    <div class="controls">
+      <button class="side-btn" id="addManual" aria-label="Saisie au clavier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M17 10h.01M8 14h8"/></svg></button>
+      <button class="mic" id="mic" aria-label="Dicter une dépense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg></button>
+      <button class="side-btn" id="undoLast" aria-label="Annuler la dernière"><svg class="flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<section class="sheet" id="editSheet" role="dialog" aria-modal="true" aria-labelledby="editTitle" hidden>
+  <div class="grab"></div>
+  <h2 id="editTitle">Dépense</h2>
+  <div class="raw" id="editRaw" hidden></div>
+  <div class="field">
+    <label for="fAmount" data-i="amount">Montant</label>
+    <div class="amount-wrap"><input class="inp big" id="fAmount" inputmode="decimal" autocomplete="off"><span class="unit" data-i="cur">DA</span></div>
+  </div>
+  <div class="field">
+    <label for="fLabel" data-i="label">Description</label>
+    <input class="inp" id="fLabel" autocomplete="off">
+  </div>
+  <div class="field">
+    <label data-i="category">Catégorie</label>
+    <div class="cats" id="fCats"></div>
+  </div>
+  <div class="field">
+    <label for="fDate" data-i="date">Date</label>
+    <input class="inp" id="fDate" type="datetime-local">
+  </div>
+  <div class="btns">
+    <button class="btn danger" id="fDelete" data-i="delete">Supprimer</button>
+    <button class="btn primary" id="fSave" data-i="save">Enregistrer</button>
+  </div>
+</section>
+
+<section class="sheet" id="setSheet" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+  <div class="grab"></div>
+  <h2 id="setTitle" data-i="settings">Réglages</h2>
+  <div class="set-row">
+    <p><span data-i="millionT">« 1 million » = 10 000 DA</span><small data-i="millionS">Compter en centimes quand on dit million / مليون / milliard</small></p>
+    <button class="switch" id="swMillion" role="switch" aria-checked="true" aria-labelledby="swMillion"></button>
+  </div>
+  <div class="set-row">
+    <p><span data-i="autoT">Écoute dès l'ouverture</span><small data-i="autoS">Le micro démarre tout seul quand on ouvre l'app</small></p>
+    <button class="switch" id="swAuto" role="switch" aria-checked="false"></button>
+  </div>
+  <div class="set-row">
+    <p><span data-i="exportT">Exporter (Excel / CSV)</span><small data-i="exportS">Toutes les dépenses dans un fichier</small></p>
+    <button class="chip" id="exportCsv" data-i="exportB">Exporter</button>
+  </div>
+  <div class="set-row">
+    <p><span data-i="installT">Installer sur le téléphone</span><small id="installS" data-i="installS">Chrome : menu ⋮ → « Ajouter à l'écran d'accueil »</small></p>
+    <button class="chip" id="installBtn" hidden data-i="installB">Installer</button>
+  </div>
+  <div class="btns" style="margin-top:18px">
+    <button class="btn danger" id="wipe" data-i="wipe">Tout effacer</button>
+    <button class="btn ghost" id="closeSet" data-i="close">Fermer</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"><div class="t-msg" id="toastMsg"></div><button id="toastAct"></button></div>
+
+<script src="parse.js"></script>
+<script>
+(() => {
+'use strict';
+const { parseExpense, CATEGORIES } = window.MasroufParse;
+const $ = s => document.querySelector(s);
+const KEY = 'masrouf.v1', PREF = 'masrouf.prefs';
+
+/* ---------- Textes ---------- */
+const T = {
+  fr:{appName:'Masrouf',tagline:'Carnet de dépenses',today:"Aujourd'hui",thisMonth:'Ce mois',history:'Historique',
+      hint:'Touchez le micro : « 10 000 DA carburant »',listening:'Je vous écoute…',cur:'DA',
+      amount:'Montant',label:'Description',category:'Catégorie',date:'Date',delete:'Supprimer',confirmDel:'Confirmer',save:'Enregistrer',
+      newExp:'Nouvelle dépense',editExp:'Modifier',settings:'Réglages',millionT:'« 1 million » = 10 000 DA',
+      millionS:'Compter en centimes quand on dit million / مليون / milliard',autoT:"Écoute dès l'ouverture",autoS:"Le micro démarre tout seul quand on ouvre l'app",
+      exportT:'Exporter (Excel / CSV)',exportS:'Toutes les dépenses dans un fichier',exportB:'Exporter',installT:'Installer sur le téléphone',
+      installS:"Chrome : menu ⋮ → « Ajouter à l'écran d'accueil »",installB:'Installer',wipe:'Tout effacer',wipeConfirm:'Sûr ? Toucher encore',close:'Fermer',
+      saved:'Enregistré',undo:'Annuler',edit:'Modifier',removed:'Supprimé',noAmount:"Montant non compris. Corrigez ou réessayez.",
+      noSpeech:"Je n'ai rien entendu. Réessayez.",noMic:"Micro refusé. Autorisez le micro pour cette app dans les réglages du navigateur.",
+      noSR:"La dictée n'est pas disponible dans ce navigateur. Utilisez Chrome (Android) ou Safari (iPhone), ou le clavier.",
+      netErr:"La dictée a besoin d'internet. Vérifiez la connexion.",nothing:'Rien à annuler',
+      empty:'Aucune dépense ce mois-ci',emptyS:'Touchez le gros bouton et parlez, par exemple :',emptyQ:'« 2 millions gasoil » · « صرفت 3500 دينار قهوة »',
+      items:n=>n+(n>1?' dépenses':' dépense'),yesterday:'Hier',todayD:"Aujourd'hui"},
+  ar:{appName:'مصروف',tagline:'دفتر المصاريف',today:'اليوم',thisMonth:'هذا الشهر',history:'السجل',
+      hint:'اضغط على الميكروفون وقل: «عشرة آلاف دينار بنزين»',listening:'أنا أسمعك…',cur:'دج',
+      amount:'المبلغ',label:'الوصف',category:'الصنف',date:'التاريخ',delete:'حذف',confirmDel:'تأكيد الحذف',save:'حفظ',
+      newExp:'مصروف جديد',editExp:'تعديل',settings:'الإعدادات',millionT:'«مليون» = 10 000 دج',
+      millionS:'الحساب بالسنتيم عند قول مليون / مليار',autoT:'الاستماع عند الفتح',autoS:'الميكروفون يبدأ وحده عند فتح التطبيق',
+      exportT:'تصدير (Excel / CSV)',exportS:'كل المصاريف في ملف واحد',exportB:'تصدير',installT:'تثبيت على الهاتف',
+      installS:'كروم: القائمة ⋮ ← «إضافة إلى الشاشة الرئيسية»',installB:'تثبيت',wipe:'حذف الكل',wipeConfirm:'متأكد؟ اضغط مرة أخرى',close:'إغلاق',
+      saved:'تم الحفظ',undo:'تراجع',edit:'تعديل',removed:'تم الحذف',noAmount:'لم أفهم المبلغ. صحّح أو أعد المحاولة.',
+      noSpeech:'لم أسمع شيئًا. أعد المحاولة.',noMic:'الميكروفون مرفوض. اسمح به لهذا التطبيق في إعدادات المتصفح.',
+      noSR:'الإملاء الصوتي غير متوفر في هذا المتصفح. استعمل كروم (أندرويد) أو سفاري (آيفون)، أو لوحة المفاتيح.',
+      netErr:'الإملاء الصوتي يحتاج إلى الإنترنت.',nothing:'لا شيء للتراجع عنه',
+      empty:'لا توجد مصاريف هذا الشهر',emptyS:'اضغط على الزر الكبير وتكلم، مثلا:',emptyQ:'«مليون في المازوت» · «2 millions gasoil»',
+      items:n=>n+' مصروف',yesterday:'أمس',todayD:'اليوم'}
+};
+
+/* ---------- État ---------- */
+let prefs = { lang:'fr', million:true, auto:false };
+let items = [];
+let viewMonth = monthKey(new Date());
+let editingId = null, lastAddedId = null, editCat = 'autre';
+
+function load(){
+  try { const p = JSON.parse(localStorage.getItem(PREF) || 'null'); if (p) prefs = Object.assign(prefs, p); } catch(e){}
+  try { items = JSON.parse(localStorage.getItem(KEY) || '[]'); if (!Array.isArray(items)) items = []; } catch(e){ items = []; }
+  if (!localStorage.getItem(PREF) && (navigator.language||'').startsWith('ar')) prefs.lang = 'ar';
+}
+function persist(){
+  try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){}
+  try { localStorage.setItem(PREF, JSON.stringify(prefs)); } catch(e){}
+}
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+
+/* ---------- Format ---------- */
+const nf = new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2});
+const fmt = n => nf.format(n).replace(/ /g,' ');
+const t = k => T[prefs.lang][k];
+const cat = id => CATEGORIES.find(c => c.id === id) || CATEGORIES[CATEGORIES.length-1];
+const catName = id => cat(id)[prefs.lang === 'ar' ? 'ar' : 'fr'];
+const catColor = id => `var(--c-${cat(id).id})`;
+function monthKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function dayKey(d){ return monthKey(d)+'-'+String(d.getDate()).padStart(2,'0'); }
+function locale(){ return prefs.lang === 'ar' ? 'ar-DZ' : 'fr-FR'; }
+function monthTitle(mk){
+  const [y,m] = mk.split('-').map(Number);
+  const s = new Date(y,m-1,1).toLocaleDateString(locale(),{month:'long',year:'numeric',numberingSystem:'latn'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function dayTitle(dk){
+  const now = new Date(), y = new Date(Date.now()-864e5);
+  if (dk === dayKey(now)) return t('todayD');
+  if (dk === dayKey(y)) return t('yesterday');
+  const [Y,M,D] = dk.split('-').map(Number);
+  const s = new Date(Y,M-1,D).toLocaleDateString(locale(),{weekday:'long',day:'numeric',month:'long',numberingSystem:'latn'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Rendu ---------- */
+function applyLang(){
+  const ar = prefs.lang === 'ar';
+  document.documentElement.lang = ar ? 'ar' : 'fr';
+  document.documentElement.dir = ar ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i]').forEach(el => { const v = t(el.dataset.i); if (typeof v === 'string') el.textContent = v; });
+  $('#langFr').setAttribute('aria-pressed', String(!ar));
+  $('#langAr').setAttribute('aria-pressed', String(ar));
+  document.title = t('appName');
+}
+
+function render(){
+  const now = new Date(), tk = dayKey(now), mkNow = monthKey(now);
+  const todaySum = items.filter(i => dayKey(new Date(i.ts)) === tk).reduce((a,i)=>a+i.amount,0);
+  $('#todayTotal').innerHTML = fmt(todaySum)+`<span class="cur">${t('cur')}</span>`;
+
+  const monthItems = items.filter(i => monthKey(new Date(i.ts)) === viewMonth).sort((a,b)=>b.ts-a.ts);
+  const mSum = monthItems.reduce((a,i)=>a+i.amount,0);
+  $('#monthLabel').textContent = viewMonth === mkNow ? t('thisMonth') : monthTitle(viewMonth);
+  $('#monthTotal').textContent = fmt(mSum)+' '+t('cur');
+  $('#monthName').textContent = monthTitle(viewMonth);
+  $('#nextM').disabled = viewMonth >= mkNow; $('#nextM').style.opacity = viewMonth >= mkNow ? .3 : 1;
+
+  // barre par catégorie
+  const byCat = {};
+  monthItems.forEach(i => byCat[i.cat] = (byCat[i.cat]||0) + i.amount);
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  $('#catBar').innerHTML = cats.map(([c,v]) => `<span style="flex:${v};background:${catColor(c)}" title="${esc(catName(c))}"></span>`).join('');
+  $('#legend').innerHTML = cats.slice(0,5).map(([c,v]) => `<span><i style="background:${catColor(c)}"></i>${esc(catName(c))} <span class="num">${Math.round(v/mSum*100)}%</span></span>`).join('');
+  $('#legend').hidden = !cats.length;
+
+  // liste par jour
+  const list = $('#list');
+  if (!monthItems.length){
+    list.innerHTML = `<div class="empty"><strong>${t('empty')}</strong>${t('emptyS')}<q>${esc(t('emptyQ'))}</q></div>`;
+    return;
+  }
+  const days = new Map();
+  monthItems.forEach(i => { const k = dayKey(new Date(i.ts)); if (!days.has(k)) days.set(k,[]); days.get(k).push(i); });
+  let html = '';
+  for (const [dk, arr] of days){
+    const s = arr.reduce((a,i)=>a+i.amount,0);
+    html += `<section class="day"><div class="day-h"><span>${esc(dayTitle(dk))}</span><span class="num">${fmt(s)} ${t('cur')}</span></div>`;
+    for (const i of arr){
+      const time = new Date(i.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      const title = i.label || catName(i.cat);
+      const initial = catName(i.cat).trim().charAt(0).toUpperCase();
+      html += `<button class="row${i.id===lastAddedId?' fresh':''}" data-id="${i.id}">
+        <span class="dot" style="background:${catColor(i.cat)}" aria-hidden="true">${esc(initial)}</span>
+        <span class="row-main"><span class="row-title" style="display:block">${esc(title)}</span><span class="row-sub">${esc(catName(i.cat))} · ${time}</span></span>
+        <span class="amount num">${fmt(i.amount)}<span class="cur">${t('cur')}</span></span></button>`;
+    }
+    html += `</section>`;
+  }
+  list.innerHTML = html;
+  lastAddedId = null;
+}
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function toast(msg, actLabel, act){
+  $('#toastMsg').innerHTML = msg;
+  const b = $('#toastAct');
+  b.hidden = !actLabel; b.textContent = actLabel || '';
+  b.onclick = () => { hideToast(); act && act(); };
+  $('#toast').classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 4500);
+}
+function hideToast(){ $('#toast').classList.remove('show'); }
+function bubble(html){ $('#bubble').innerHTML = html; }
+function resetBubble(){ bubble(`<span class="hint">${t('hint')}</span>`); }
+
+/* ---------- Ajout ---------- */
+function addExpense(p){
+  const it = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), amount:p.amount, label:p.label||'', cat:p.category||'autre', ts:p.ts||Date.now(), raw:p.raw||'' };
+  items.push(it); persist();
+  lastAddedId = it.id; viewMonth = monthKey(new Date(it.ts));
+  render();
+  if (navigator.vibrate) navigator.vibrate(30);
+  toast(`${t('saved')} · <b>${fmt(it.amount)} ${t('cur')}</b> ${esc(it.label||catName(it.cat))}`, t('edit'), () => openEdit(it.id));
+  return it;
+}
+function removeExpense(id){
+  const idx = items.findIndex(i => i.id === id); if (idx < 0) return;
+  const [gone] = items.splice(idx,1); persist(); render();
+  toast(`${t('removed')} · <b>${fmt(gone.amount)} ${t('cur')}</b>`, t('undo'), () => { items.push(gone); persist(); render(); });
+}
+
+/* ---------- Voix ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false, gotResult = false;
+function startListening(){
+  if (!SR){ bubble(esc(t('noSR'))); openEdit(null); return; }
+  if (listening){ rec && rec.stop(); return; }
+  rec = new SR();
+  rec.lang = prefs.lang === 'ar' ? 'ar-DZ' : 'fr-FR';
+  rec.interimResults = true; rec.maxAlternatives = 4; rec.continuous = false;
+  gotResult = false;
+  rec.onstart = () => { listening = true; $('#mic').classList.add('listening'); bubble(`<span class="hint">${t('listening')}</span>`); };
+  rec.onresult = e => {
+    const res = e.results[e.results.length-1];
+    if (!res.isFinal){ bubble(esc(res[0].transcript)); return; }
+    gotResult = true;
+    const alts = Array.from(res).map(a => a.transcript);
+    let parsed = null;
+    for (const a of alts){ parsed = parseExpense(a, {millionAsCentimes:prefs.million}); if (parsed) break; }
+    bubble(`« ${esc(alts[0])} »`);
+    if (parsed) addExpense(parsed);
+    else { toast(esc(t('noAmount'))); openEdit(null, { raw: alts[0], label: alts[0] }); }
+  };
+  rec.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') bubble(esc(t('noMic')));
+    else if (e.error === 'network') bubble(esc(t('netErr')));
+    else if (e.error === 'no-speech') bubble(esc(t('noSpeech')));
+  };
+  rec.onend = () => { listening = false; $('#mic').classList.remove('listening'); setTimeout(()=>{ if (!listening && gotResult) resetBubble(); }, 3500); };
+  try { rec.start(); } catch(e){}
+}
+
+/* ---------- Feuilles ---------- */
+function showSheet(el){ const s = $('#scrim'); s.hidden = false; el.hidden = false; requestAnimationFrame(()=>{ s.classList.add('show'); el.classList.add('show'); }); }
+function hideSheets(){
+  const s = $('#scrim'); s.classList.remove('show');
+  document.querySelectorAll('.sheet').forEach(el => el.classList.remove('show'));
+  setTimeout(()=>{ s.hidden = true; document.querySelectorAll('.sheet').forEach(el => el.hidden = true); }, 260);
+  disarm();
+}
+function toLocalInput(ts){ const d = new Date(ts); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+function renderCats(){
+  $('#fCats').innerHTML = CATEGORIES.map(c => `<button class="chip" data-cat="${c.id}" aria-pressed="${c.id===editCat}"><i style="background:${catColor(c.id)}"></i>${esc(c[prefs.lang==='ar'?'ar':'fr'])}</button>`).join('');
+}
+function openEdit(id, prefill){
+  editingId = id;
+  const it = id ? items.find(i => i.id === id) : null;
+  $('#editTitle').textContent = it ? t('editExp') : t('newExp');
+  $('#fAmount').value = it ? String(it.amount) : (prefill && prefill.amount ? String(prefill.amount) : '');
+  $('#fLabel').value = it ? it.label : (prefill && prefill.label ? prefill.label : '');
+  editCat = it ? it.cat : (prefill && prefill.label ? MasroufParse.guessCategory(MasroufParse.normalize(prefill.label)) : 'autre');
+  $('#fDate').value = toLocalInput(it ? it.ts : Date.now());
+  const raw = it ? it.raw : (prefill && prefill.raw);
+  $('#editRaw').hidden = !raw; $('#editRaw').textContent = raw ? '🎙 « '+raw+' »' : '';
+  $('#fDelete').hidden = !it;
+  renderCats(); showSheet($('#editSheet'));
+  if (!it) setTimeout(()=>$('#fAmount').focus(), 280);
+}
+function readAmount(v){
+  const p = parseExpense(v, {millionAsCentimes:prefs.million});
+  if (p) return p.amount;
+  const n = parseFloat(String(v).replace(/\s/g,'').replace(',','.'));
+  return isFinite(n) ? n : NaN;
+}
+function saveEdit(){
+  const amount = readAmount($('#fAmount').value);
+  if (!(amount > 0)){ $('#fAmount').focus(); $('#fAmount').style.borderColor = 'var(--danger)'; return; }
+  $('#fAmount').style.borderColor = '';
+  const ts = $('#fDate').value ? new Date($('#fDate').value).getTime() : Date.now();
+  const label = $('#fLabel').value.trim();
+  if (editingId){
+    const it = items.find(i => i.id === editingId);
+    Object.assign(it, { amount, label, cat:editCat, ts }); persist();
+    lastAddedId = it.id; viewMonth = monthKey(new Date(ts)); render(); hideSheets();
+    toast(`${t('saved')} · <b>${fmt(amount)} ${t('cur')}</b>`);
+  } else {
+    hideSheets(); addExpense({ amount, label, category:editCat, ts, raw:$('#editRaw').hidden ? '' : $('#editRaw').textContent.replace(/^🎙 « | »$/g,'') });
+  }
+}
+let armTimer;
+function disarm(){ document.querySelectorAll('.armed').forEach(b => { b.classList.remove('armed'); b.textContent = t(b.dataset.i); }); }
+function arm(btn, label, onConfirm){
+  if (btn.classList.contains('armed')){ disarm(); onConfirm(); return; }
+  disarm(); btn.classList.add('armed'); btn.textContent = label;
+  clearTimeout(armTimer); armTimer = setTimeout(disarm, 3500);
+}
+
+/* ---------- Export CSV ---------- */
+function exportCsv(){
+  const rows = [['Date','Heure','Montant (DA)','Catégorie','Description','Dicté']];
+  items.slice().sort((a,b)=>a.ts-b.ts).forEach(i => {
+    const d = new Date(i.ts);
+    rows.push([d.toLocaleDateString('fr-FR'), d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), String(i.amount).replace('.',','), cat(i.cat).fr, i.label, i.raw]);
+  });
+  const csv = '﻿' + rows.map(r => r.map(v => '"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const name = 'masrouf-depenses-'+dayKey(new Date())+'.csv';
+  const file = new File([blob], name, {type:'text/csv'});
+  if (navigator.canShare && navigator.canShare({files:[file]})) { navigator.share({files:[file], title:name}).catch(()=>{}); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ---------- Événements ---------- */
+$('#mic').addEventListener('click', startListening);
+$('#addManual').addEventListener('click', () => openEdit(null));
+$('#undoLast').addEventListener('click', () => {
+  const last = items.slice().sort((a,b)=>b.ts-a.ts)[0];
+  if (!last){ toast(esc(t('nothing'))); return; }
+  removeExpense(last.id);
+});
+$('#list').addEventListener('click', e => { const r = e.target.closest('.row'); if (r) openEdit(r.dataset.id); });
+$('#fCats').addEventListener('click', e => { const c = e.target.closest('[data-cat]'); if (c){ editCat = c.dataset.cat; renderCats(); } });
+$('#fSave').addEventListener('click', saveEdit);
+$('#fAmount').addEventListener('keydown', e => { if (e.key === 'Enter') $('#fLabel').focus(); });
+$('#fLabel').addEventListener('keydown', e => { if (e.key === 'Enter') saveEdit(); });
+$('#fDelete').addEventListener('click', e => arm(e.currentTarget, t('confirmDel'), () => { const id = editingId; hideSheets(); removeExpense(id); }));
+$('#scrim').addEventListener('click', hideSheets);
+$('#openSettings').addEventListener('click', () => showSheet($('#setSheet')));
+$('#closeSet').addEventListener('click', hideSheets);
+$('#prevM').addEventListener('click', () => { const [y,m] = viewMonth.split('-').map(Number); viewMonth = monthKey(new Date(y,m-2,1)); render(); });
+$('#nextM').addEventListener('click', () => { const [y,m] = viewMonth.split('-').map(Number); const n = monthKey(new Date(y,m,1)); if (n <= monthKey(new Date())){ viewMonth = n; render(); } });
+function setLang(l){ prefs.lang = l; persist(); applyLang(); resetBubble(); render(); }
+$('#langFr').addEventListener('click', () => setLang('fr'));
+$('#langAr').addEventListener('click', () => setLang('ar'));
+function syncSwitches(){ $('#swMillion').setAttribute('aria-checked', String(prefs.million)); $('#swAuto').setAttribute('aria-checked', String(prefs.auto)); }
+$('#swMillion').addEventListener('click', () => { prefs.million = !prefs.million; persist(); syncSwitches(); });
+$('#swAuto').addEventListener('click', () => { prefs.auto = !prefs.auto; persist(); syncSwitches(); });
+$('#exportCsv').addEventListener('click', exportCsv);
+$('#wipe').addEventListener('click', e => arm(e.currentTarget, t('wipeConfirm'), () => { items = []; persist(); hideSheets(); render(); }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSheets(); });
+
+// Installation (Android / Chrome)
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; $('#installBtn').hidden = false; });
+$('#installBtn').addEventListener('click', async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice.catch(()=>{}); deferredPrompt = null; $('#installBtn').hidden = true; });
+if (/iphone|ipad|ipod/i.test(navigator.userAgent)) T.fr.installS = 'Safari : bouton Partager → « Sur l\'écran d\'accueil »', T.ar.installS = 'سفاري: زر المشاركة ← «إضافة إلى الشاشة الرئيسية»';
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* ---------- Démarrage ---------- */
+load(); applyLang(); syncSwitches(); render();
+if (new URLSearchParams(location.search).has('dicter') || prefs.auto) setTimeout(startListening, 400);
+})();
+</script>
+</body>
+</html>

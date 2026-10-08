@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#1F5C45"/>
+  <rect x="0" y="372" width="512" height="140" fill="#174A37"/>
+  <g transform="translate(256 236)">
+    <circle r="150" fill="#F0AA22"/>
+    <rect x="-38" y="-92" width="76" height="132" rx="38" fill="#13201A"/>
+    <path d="M-74 -2a74 74 0 0 0 148 0M0 74v36M-34 110h68" fill="none" stroke="#13201A" stroke-width="20" stroke-linecap="round"/>
+  </g>
+  <text x="256" y="462" text-anchor="middle" font-family="IBM Plex Mono, DejaVu Sans Mono, monospace" font-weight="700" font-size="52" fill="#F0AA22" letter-spacing="4">DA</text>
+</svg>
