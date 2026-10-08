@@ -1,4 +1,4 @@
-const CACHE = 'masrouf-v3';
+const CACHE = 'masrouf-v4';
 const SHELL = ['./', './index.html', './parse.js', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
