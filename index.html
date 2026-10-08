@@ -293,7 +293,7 @@ const T = {
       installS:"Chrome : menu ⋮ → « Ajouter à l'écran d'accueil »",installB:'Installer',wipe:'Tout effacer',wipeConfirm:'Sûr ? Toucher encore',close:'Fermer',
       saved:'Enregistré',undo:'Annuler',edit:'Modifier',removed:'Supprimé',noAmount:"Montant non compris. Corrigez ou réessayez.",
       noSpeech:"Je n'ai rien entendu. Réessayez.",noMic:"Micro refusé. Autorisez le micro pour cette app dans les réglages du navigateur.",
-      noSR:"La dictée n'est pas disponible dans ce navigateur. Utilisez Chrome (Android) ou Safari (iPhone), ou le clavier.",
+      noSR:"La dictée vocale ne marche pas dans ce navigateur (Firefox). Utilisez Chrome sur le téléphone, ou Chrome / Edge sur PC. Sinon, touchez le clavier.",
       netErr:"La dictée a besoin d'internet. Vérifiez la connexion.",nothing:'Rien à annuler',
       empty:'Aucune dépense ce mois-ci',emptyS:'Touchez le gros bouton et parlez, par exemple :',emptyQ:'« 2 millions gasoil » · « صرفت 3500 دينار قهوة »',
       items:n=>n+(n>1?' dépenses':' dépense'),yesterday:'Hier',todayD:"Aujourd'hui"},
@@ -446,7 +446,7 @@ function removeExpense(id){
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, listening = false, gotResult = false;
 function startListening(){
-  if (!SR){ bubble(esc(t('noSR'))); openEdit(null); return; }
+  if (!SR){ bubble(esc(t('noSR'))); toast(esc(t('noSR'))); clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 7000); return; }
   if (listening){ rec && rec.stop(); return; }
   rec = new SR();
   rec.lang = prefs.lang === 'ar' ? 'ar-DZ' : 'fr-FR';
